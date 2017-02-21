@@ -79,15 +79,17 @@ map.on('moveend', function() {
 });
 
 function runDiff() {
-    document.getElementById('map').className += " loading";
-    var layers = ['road-primary', 'road-secondary-tertiary', 'road-street', 'road-service-link-track', 'road-pedestrian', 'road-steps', 'road-path'];
-    var streets = turf.combine(turf.featureCollection(map.queryRenderedFeatures({ layers: layers })));
-    var mapillary = turf.combine(turf.featureCollection(map.queryRenderedFeatures({layers: ['mapillary']})));
-    var diff = turf.difference(streets.features[0], mapillary.features[0]);
+    if (map.getZoom() === 14) {
+        document.getElementById('map').className += " loading";
+        var layers = ['road-primary', 'road-secondary-tertiary', 'road-street', 'road-service-link-track', 'road-pedestrian', 'road-steps', 'road-path'];
+        var streets = turf.combine(turf.featureCollection(map.queryRenderedFeatures({ layers: layers })));
+        var mapillary = turf.combine(turf.featureCollection(map.queryRenderedFeatures({layers: ['mapillary']})));
+        var diff = turf.difference(streets.features[0], mapillary.features[0]);
 
-    map.getSource('diffSource').setData(diff);
-    map.fire('diffcomplete');
-    document.getElementById('map').className = document.getElementById('map').className.split(' ')[0];
+        map.getSource('diffSource').setData(diff);
+        map.fire('diffcomplete');
+        document.getElementById('map').className = document.getElementById('map').className.split(' ')[0];
+    }
 }
 
 </script>
