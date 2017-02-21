@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8' />
+    <title></title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.21.0/mapbox-gl.js'></script>
+    <script src='https://npmcdn.com/@turf/turf/turf.min.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.32.1/mapbox-gl.css' rel='stylesheet' />
+    <link href="https://api.mapbox.com/mapbox-assembly/v0.10.1/assembly.min.css" rel="stylesheet">
+    <style>
+        body { margin:0; padding:0; }
+        #map { position:absolute; top:0; bottom:0; width:100%; }
+    </style>
+</head>
+<body>
+
+<div id='map'></div>
+<script>
+mapboxgl.accessToken = 'pk.eyJ1IjoiZ2VvaGFja2VyIiwiYSI6ImFIN0hENW8ifQ.GGpH9gLyEg0PZf3NPQ7Vrg';
+var map = new mapboxgl.Map({
+    container: 'map', // container id
+    style: 'mapbox://styles/mapbox/streets-v10', //stylesheet location
+    center: [77.5915, 12.9775], // starting position
+    zoom: 14, // starting zoom
+    hash: true
+});
+
+var mapillarySequenceSource = {
+    'type': 'vector',
+    'tiles': [
+        'https://d25uarhxywzl1j.cloudfront.net/v0.1/{z}/{x}/{y}.mvt'
+    ]
+};
+
+var mapillarySequenceLayer = {
+    'id': 'mapillary',
+    'type': 'line',
+    'source': 'mapillarySequenceSource',
+    'source-layer': 'mapillary-sequences',
+    'layout': {
+        'line-join': 'round',
+        'line-cap': 'round'
+    },
+    'paint': {
+        'line-color': '#ff69b4',
+        'line-width': 1
+    }
+};
+
+var diffSource = {
+    'type': 'geojson',
+    'data': {}
+}
+var diffLayer = {
+    'id': 'diffLayer',
+    'type': 'line',
+    'source': 'diffSource',
+    'paint': {
+        'line-color': 'blue',
+        'line-width': 1
+    }
+};
+
+map.on('style.load', function () {
+    map.addSource('mapillarySequenceSource', mapillarySequenceSource);
+    map.addLayer(mapillarySequenceLayer);
+
+    map.addSource('diffSource', diffSource);
+    map.addLayer(diffLayer);
+});
+
+map.on('load', function() {
+    runDiff();
+});
+
+map.on('moveend', function() {
+    runDiff();
+});
+
+function runDiff() {
+    document.getElementById('map').className += " loading";
+    var layers = ['road-primary', 'road-secondary-tertiary', 'road-street', 'road-service-link-track', 'road-pedestrian', 'road-steps', 'road-path'];
+    var streets = turf.combine(turf.featureCollection(map.queryRenderedFeatures({ layers: layers })));
+    var mapillary = turf.combine(turf.featureCollection(map.queryRenderedFeatures({layers: ['mapillary']})));
+    var diff = turf.difference(streets.features[0], mapillary.features[0]);
+
+    map.getSource('diffSource').setData(diff);
+    map.fire('diffcomplete');
+    document.getElementById('map').className = document.getElementById('map').className.split(' ')[0];
+}
+
+</script>
+
+</body>
+</html>
